@@ -32,6 +32,6 @@ for j in range(1):
 # nx.draw(model.H2, node_color="purple")
 # nx.draw(model.H3, node_color="chocolate", edge_color="white")
 # nx.draw(model.G, with_labels=False)
-results_model[results_model.columns[1:6]].plot()
-results_model[results_model.columns[7:12]].plot()
-plt.show()  # draw graph as desired and plot outputs
+# results_model[results_model.columns[1:6]].plot()
+# results_model[results_model.columns[7:12]].plot()
+# plt.show()  # draw graph as desired and plot outputs
