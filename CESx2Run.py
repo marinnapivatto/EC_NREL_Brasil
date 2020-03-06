@@ -6,40 +6,32 @@ Created on Wed Nov 21 12:43 2019
 
 Run
 """
-# TO DO: continue implementing run
-# start year by year, 2019 to 2070
 
-from CESx2ToolModel_v3 import *
+from ABM_CE_PV_Model import *
 import matplotlib.pyplot as plt
-import numpy as np
-
-model = CESx2()
-
-# Run model
-for i in range(51):
-    model.step()
-    model.clock = model.clock + 1
-
-# Get results in a pandas DataFrame
-results_model = model.datacollector.get_model_vars_dataframe()
-results_agents = model.datacollector.get_agent_vars_dataframe()
-results_model.to_csv("Results_model.csv")
-results_agents.to_csv("Results_agents.csv")
 
 
-# Draw the network of agents and results
-def color_agents(step, column):
-    color_map = []
-    for node in model.G:
-        agents_df = results_agents.loc[step, column]
-        if agents_df[node]:
-            color_map.append('green')
-        else:
-            color_map.append('blue')
-    return color_map
+model = ABM_CE_PV()
 
+# Run model several time
+for j in range(1):
+    # Reinitialize model
+    model.__init__()
+    i = 0
+    for i in range(51):
+        model.step()
 
-nx.draw(model.G, node_color=color_agents(51, "Recycling"), with_labels=True)
-results_model[results_model.columns[0:2]].plot()
-results_model[results_model.columns[2:5]].plot()
-plt.show()
+    # Get results in a pandas DataFrame
+    results_model = model.datacollector.get_model_vars_dataframe()
+    results_agents = model.datacollector.get_agent_vars_dataframe()
+    results_model.to_csv("Results_model_run%s.csv" % j)
+    results_agents.to_csv("Results_agents.csv")
+
+# Draw the networks of agents and results
+# nx.draw(model.H1, node_color="lightskyblue")
+# nx.draw(model.H2, node_color="purple")
+# nx.draw(model.H3, node_color="chocolate", edge_color="white")
+# nx.draw(model.G, with_labels=False)
+results_model[results_model.columns[1:6]].plot()
+results_model[results_model.columns[7:12]].plot()
+plt.show()  # draw graph as desired and plot outputs
