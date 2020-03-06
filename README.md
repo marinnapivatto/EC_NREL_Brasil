@@ -1,4 +1,4 @@
-# CESx2Tool
+# ABSiCE Tool
 
 The Agent-Based Simulations of the Circular Economy (ABSiCE) tool is 
 an agent-based model built with the MESA python library. The tool enables 
