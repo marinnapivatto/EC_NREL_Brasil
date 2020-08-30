@@ -23,33 +23,68 @@ def run_model(number_run, number_steps):
         t0 = time.time()
         if j < 30:
             model = ABM_CE_PV(
-                seed=j, seeding_recyc={"Seeding": True,
-                          "Year": 10, "number_seed": 300, "discount": 0.35})
+                seed=j, recycling_process={"frelp": False, "asu": True,
+                                    "hybrid": False})
         elif j < 60:
-            model = ABM_CE_PV(seed=(j - 30),
-                              seeding_recyc={"Seeding": True,
-                                             "Year": 10, "number_seed": 400,
-                                             "discount": 0.35})
+            model = ABM_CE_PV(
+                seed=(j - 30), recycling_process={"frelp": True, "asu": False,
+                                    "hybrid": False})
         elif j < 90:
-            model = ABM_CE_PV(seed=(j - 60),
-                              seeding_recyc={"Seeding": True,
-                                             "Year": 10, "number_seed": 500,
-                                             "discount": 0.35})
+            model = ABM_CE_PV(
+                seed=(j - 60), calibration_n_sensitivity_3=0.35)
+        elif j < 120:
+            model = ABM_CE_PV(seed=(j - 90),
+                              att_distrib_param_reuse=[0.5, 0.262])
+        elif j < 150:
+            model = ABM_CE_PV(seed=(j - 120),
+                              calibration_n_sensitivity_4=2)
+        elif j < 180:
+            model = ABM_CE_PV(seed=(j - 150),
+                              recycling_learning_shape_factor=-0.6)
+        elif j < 210:
+            model = ABM_CE_PV(seed=(j - 180),
+                              recycling_learning_shape_factor=-1E-6)
+        elif j < 240:
+            model = ABM_CE_PV(seed=(j - 210),
+                              dynamic_lifetime_model={"Dynamic lifetime": True,
+                                                      "d_lifetime_intercept": 15.9,
+                                                      "d_lifetime_reg_coeff": 0.87,
+                                                      "Seed": False, "Year": 5,
+                                                      "avg_lifetime": 50})
+        elif j < 270:
+            model = ABM_CE_PV(seed=(j - 240),
+                              all_EoL_pathways={"repair": True, "sell": True,
+                                                "recycle": True,
+                                                "landfill": False,
+                                                "hoard": True})
+        elif j < 300:
+            model = ABM_CE_PV(seed=(j - 270),
+                              seeding={"Seeding": True,
+                                       "Year": 5, "number_seed": 50})
+        elif j < 330:
+            model = ABM_CE_PV(seed=(j - 300),
+                              repairability=1,
+                              init_purchase_choice={"new": 0, "used": 1,
+                                                    "certified": 0},
+                              w_sn_eol=0,
+                              w_pbc_eol=0.44,
+                              w_a_eol=0,
+                              w_sn_reuse=0.497,
+                              w_pbc_reuse=0.382,
+                              w_a_reuse=0,
+                              original_repairing_cost=[0.0001, 0.00045,
+                                                       0.00028],
+                              all_EoL_pathways={"repair": False, "sell": True,
+                                                "recycle": False,
+                                                "landfill": True,
+                                                "hoard": True})
         else:
-            model = ABM_CE_PV(seed=(j-90),
-                repairability=1,
-                init_purchase_choice={"new": 0, "used": 1,
-                                      "certified": 0},
-                w_sn_eol=0,
-                w_pbc_eol=0.44,
-                w_a_eol=0,
-                w_sn_reuse=0.497,
-                w_pbc_reuse=0.382,
-                w_a_reuse=0,
-                original_repairing_cost=[0.0001, 0.00045, 0.00028],
-                all_EoL_pathways={"repair": False, "sell": True,
-                                  "recycle": False, "landfill": True,
-                                  "hoard": True})
+            model = ABM_CE_PV(seed=(j - 330),
+                              calibration_n_sensitivity_3=0.65,
+                              recovery_fractions={
+                "Product": np.nan, "Aluminum": 0.994, "Glass": 0.98,
+                "Copper": 0.97, "Insulated cable": 1., "Silicon": 0.97,
+                "Silver": 0.94})
         for i in range(number_steps):
             model.step()
         # Get results in a pandas DataFrame
@@ -59,6 +94,7 @@ def run_model(number_run, number_steps):
         results_agents.to_csv("Results_agents.csv")
         # Draw figures
         draw_graphs(False, False, model, results_agents, results_model)
+        print("Run", j+1, "out of", number_run)
         t1 = time.time()
         print(t1 - t0)
 
@@ -103,7 +139,7 @@ def draw_graphs(network, figures, model, results_agents, results_model):
         plt.show()  # draw graph as desired and plot outputs
 
 
-run_model(90, 31)
+run_model(60, 31)
 
 
 
