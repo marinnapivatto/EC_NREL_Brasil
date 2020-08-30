@@ -90,7 +90,14 @@ class ABM_CE_PV(Model):
         hoarding_cost (a list for a triangular distribution) ($/fu), (default=
             [0, 0.001, 0.0005]). From www.cisco-eagle.com (accessed 12/2019).
         landfill_cost (a list for a triangular distribution) ($/fu), (default=
-            [0.003, 0.009, 0.006]). From EPRI 2018.
+            [0.0089, 0.0074, 0.0071, 0.0069, 0.0056, 0.0043,
+                     0.0067, 0.0110, 0.0085, 0.0082, 0.0079, 0.0074, 0.0069,
+                     0.0068, 0.0068, 0.0052, 0.0052, 0.0051, 0.0074, 0.0062,
+                     0.0049, 0.0049, 0.0047, 0.0032, 0.0049, 0.0065, 0.0064,
+                     0.0062, 0.0052, 0.0048, 0.0048, 0.0044, 0.0042, 0.0039,
+                     0.0039, 0.0045, 0.0055, 0.0050, 0.0049, 0.0044, 0.0044,
+                     0.0039, 0.0033, 0.0030, 0.0041, 0.0050, 0.0040, 0.0040,
+                     0.0038, 0.0033]). From EREF 2019.
         w_sn_eol (the weight of subjective norm in the agents' decisions as
             modeled with the theory of planned behavior), (default=0.33). From
             Geiger et al. 2019.
@@ -199,6 +206,11 @@ class ABM_CE_PV(Model):
 
     def __init__(self,
                  seed=None,
+                 calibration_n_sensitivity=1,
+                 calibration_n_sensitivity_2=1,
+                 calibration_n_sensitivity_3=1,
+                 calibration_n_sensitivity_4=1,
+                 calibration_n_sensitivity_5=1,
                  num_consumers=1000,
                  consumers_node_degree=10,
                  consumers_network_type="small-world",
@@ -210,10 +222,10 @@ class ABM_CE_PV(Model):
                  num_refurbishers=15,
                  consumers_distribution={"residential": 1,
                                          "commercial": 0., "utility": 0.},
-                 init_eol_rate={"repair": 0.005, "sell": 0.02,
-                                   "recycle": 0.1, "landfill": 0.4375,
-                                   "hoard": 0.4375},
-                 init_purchase_choice={"new": 0.98, "used": 0.02,
+                 init_eol_rate={"repair": 0.005, "sell": 0.01,
+                                   "recycle": 0.1, "landfill": 0.4425,
+                                   "hoard": 0.4425},
+                 init_purchase_choice={"new": 0.9995, "used": 0.0005,
                                        "certified": 0},
                  total_number_product=[38, 38, 38, 38, 38, 38, 38, 139, 251,
                                        378, 739, 1670, 2935, 4146, 5432, 6525,
@@ -224,7 +236,15 @@ class ABM_CE_PV(Model):
                  growth_threshold=10,
                  failure_rate_alpha=[2.4928, 5.3759, 3.93495],
                  hoarding_cost=[0, 0.001, 0.0005],
-                 landfill_cost=[0.003, 0.009, 0.006],
+                 landfill_cost=[
+                     0.0089, 0.0074, 0.0071, 0.0069, 0.0056, 0.0043,
+                     0.0067, 0.0110, 0.0085, 0.0082, 0.0079, 0.0074, 0.0069,
+                     0.0068, 0.0068, 0.0052, 0.0052, 0.0051, 0.0074, 0.0062,
+                     0.0049, 0.0049, 0.0047, 0.0032, 0.0049, 0.0065, 0.0064,
+                     0.0062, 0.0052, 0.0048, 0.0048, 0.0044, 0.0042, 0.0039,
+                     0.0039, 0.0045, 0.0055, 0.0050, 0.0049, 0.0044, 0.0044,
+                     0.0039, 0.0033, 0.0030, 0.0041, 0.0050, 0.0040, 0.0040,
+                     0.0038, 0.0033],
                  theory_of_planned_behavior={
                      "residential": True, "commercial": True, "utility": True},
                  w_sn_eol=0.27,
@@ -238,16 +258,25 @@ class ABM_CE_PV(Model):
                                    "recycle": True, "landfill": True,
                                    "hoard": True},
                  max_storage=[1, 8, 4],
-                 att_distrib_param_eol=[0.5435, 0.1],
-                 att_distrib_param_reuse=[0.35, 0.262],
+                 att_distrib_param_eol=[0.544, 0.1],
+                 att_distrib_param_reuse=[0.223, 0.262],
                  original_recycling_cost=[0.106, 0.128, 0.117],
                  recycling_learning_shape_factor=-0.39,
                  repairability=0.55,
-                 original_repairing_cost=[0.1, 0.45, 0.28],
+                 # some modules don't need repair
+                 original_repairing_cost=[0.1, 0.45, 0.23],
+                 # HERE
                  repairing_learning_shape_factor=-0.31,
-                 scndhand_mkt_pric_rate=[0.4, 1, 0.7],
-                 fsthand_mkt_pric=0.3,
-                 refurbisher_margin=[0.03, 0.45, 0.24],
+                 scndhand_mkt_pric_rate=[0.4, 0.2],
+                 # from https://www.ise.fraunhofer.de/content/dam/ise/de/
+                 # documents/publications/studies/AgoraEnergiewende_Current_and_
+                 # Future_Cost_of_PV_Feb2015_web.pdf
+                 # a=6.5, b=0.078, y=a*exp(b*-t)
+                 fsthand_mkt_pric=0.45,
+                 #0.04
+                 fsthand_mkt_pric_reg_param=[1, 0.04],
+                 # HERE
+                 refurbisher_margin=[0.4, 0.6, 0.5],
                  purchase_choices={"new": True, "used": True,
                                    "certified": False},
                  init_trust_boundaries=[-1, 1],
@@ -316,6 +345,15 @@ class ABM_CE_PV(Model):
         """
         # Set up variables
         self.seed = seed
+        #att_distrib_param_eol[0] = calibration_n_sensitivity
+        #att_distrib_param_reuse[0] = calibration_n_sensitivity_2
+        #original_recycling_cost = [x * calibration_n_sensitivity_3 for x in
+         #                          original_recycling_cost]
+        #landfill_cost = [x * calibration_n_sensitivity_4 for x in
+         #                landfill_cost]
+        # att_distrib_param_eol[1] = att_distrib_param_eol[1] * \
+        #   calibration_n_sensitivity_4
+        # w_sn_eol = w_sn_eol * calibration_n_sensitivity_5
         np.random.seed(self.seed)
         random.seed(self.seed)
         self.num_consumers = num_consumers
@@ -343,6 +381,7 @@ class ABM_CE_PV(Model):
         self.original_num_prod = total_number_product
         self.avg_lifetime = product_lifetime
         self.fsthand_mkt_pric = fsthand_mkt_pric
+        self.fsthand_mkt_pric_reg_param = fsthand_mkt_pric_reg_param
         self.repairability = repairability
         self.total_waste = 0
         self.total_yearly_new_products = 0
@@ -374,13 +413,14 @@ class ABM_CE_PV(Model):
         self.yearly_product_wght = product_average_wght
         self.transportation_cost = transportation_cost
         self.epr_business_model = epr_business_model
-        self.average_landfill_cost = landfill_cost[2]
+        self.average_landfill_cost = sum(landfill_cost) / len(landfill_cost)
         self.industrial_symbiosis = industrial_symbiosis
         self.installer_recycled_amount = 0
         # Change eol_pathways depending on business model
         if self.epr_business_model:
-            self.all_EoL_pathways["landfill"] = False
-            self.industrial_symbiosis = False
+            pass
+            # self.all_EoL_pathways["landfill"] = False
+            # self.industrial_symbiosis = False
         # Dynamic lifetime model
         self.dynamic_lifetime_model = dynamic_lifetime_model
         self.extended_tpb = extended_tpb
@@ -665,10 +705,6 @@ class ABM_CE_PV(Model):
             return nx.watts_strogatz_graph(nodes, node_degree, rewiring_prob)
 
     def update_dynamic_lifetime(self):
-        """
-        If true, account for the increase in average lifetime of PV modules
-        due to innovation.
-        """
         if self.dynamic_lifetime_model["Dynamic lifetime"]:
             self.d_product_lifetimes = [
                 self.dynamic_lifetime_model["d_lifetime_intercept"] +
@@ -749,6 +785,16 @@ class ABM_CE_PV(Model):
              mass_conversion_coeffs[i] for i
              in range(len(mass_conversion_coeffs))])
         return weighted_average_mass_watt
+
+    def average_price_per_function_model(self):
+        """
+        Compute the price of first hand products. Price ratio is compared to
+        modules of the same year.
+        """
+        correction_year = len(self.total_number_product)
+        self.fsthand_mkt_pric = self.fsthand_mkt_pric_reg_param[0] * e**(
+                -self.fsthand_mkt_pric_reg_param[1] * (self.clock +
+                                                       correction_year))
 
     def count_EoL(model, condition):
         """
@@ -946,7 +992,8 @@ class ABM_CE_PV(Model):
                 self.copy_total_number_product)
         # Collect data
         self.datacollector.collect(self)
-        self.update_dynamic_lifetime()
         # Refers to agent step function
+        self.update_dynamic_lifetime()
+        self.average_price_per_function_model()
         self.schedule.step()
         self.clock = self.clock + 1
