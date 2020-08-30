@@ -11,6 +11,7 @@ from mesa import Agent
 import numpy as np
 from ABM_CE_PV_RecyclerAgents import Recyclers
 import operator
+from scipy.stats import truncnorm
 
 
 class Refurbishers(Agent):
@@ -62,10 +63,18 @@ class Refurbishers(Agent):
         self.repairing_cost = self.original_repairing_cost
         self.refurbished_volume = 0
         self.repairing_shape_factor = repairing_learning_shape_factor
+        #self.scndhand_mkt_pric_rate = \
+         #   np.random.triangular(scndhand_mkt_pric_rate[0],
+          #                       scndhand_mkt_pric_rate[2],
+           #                      scndhand_mkt_pric_rate[1])
         self.scndhand_mkt_pric_rate = \
-            np.random.triangular(scndhand_mkt_pric_rate[0],
-                                 scndhand_mkt_pric_rate[2],
-                                 scndhand_mkt_pric_rate[1])
+            float(truncnorm((0.11 - scndhand_mkt_pric_rate[0]) /
+                            scndhand_mkt_pric_rate[1],
+                            (1.14 - scndhand_mkt_pric_rate[0]) /
+                            scndhand_mkt_pric_rate[1],
+                            scndhand_mkt_pric_rate[0],
+                            scndhand_mkt_pric_rate[1]).rvs(1))
+        # attitude_level = float(distribution.rvs(1))
         self.refurbisher_margin = np.random.triangular(
             refurbisher_margin[0], refurbisher_margin[2],
             refurbisher_margin[1])
@@ -421,6 +430,10 @@ class Refurbishers(Agent):
                         self.model.num_consumers + self.model.num_recyclers:
                     agent.compute_recycler_costs()
 
+    def update_price_scdhand(self):
+        self.scd_hand_price = self.scndhand_mkt_pric_rate * \
+                              self.model.fsthand_mkt_pric
+
     def step(self):
         """
         Evolution of agent at each step
@@ -438,3 +451,4 @@ class Refurbishers(Agent):
         self.storage_to_other_pathway_recycler()
         self.recovered_material_volumes()
         self.compute_refurbisher_costs()
+        self.update_price_scdhand()
