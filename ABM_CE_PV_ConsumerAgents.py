@@ -153,8 +153,9 @@ class Consumers(Agent):
             model.num_recyclers)
         self.refurbisher_id = model.num_consumers + model.num_prod_n_recyc + \
             random.randrange(model.num_refurbishers)
-        self.landfill_cost = np.random.triangular(
-            landfill_cost[0], landfill_cost[2], landfill_cost[1])
+        self.landfill_cost = random.choice(landfill_cost)
+        #self.landfill_cost = np.random.triangular(
+         #   landfill_cost[0], landfill_cost[2], landfill_cost[1])
         self.init_landfill_cost = self.landfill_cost
         self.hoarding_cost = np.random.triangular(
             hoarding_cost[0], hoarding_cost[2], hoarding_cost[1]) * \
@@ -195,6 +196,7 @@ class Consumers(Agent):
         self.sold_waste = 0
         self.convenience = self.extended_tpb_convenience()
         self.knowledge = self.extended_tpb_knowledge()
+        #print("out func", self.knowledge)
 
     def update_transport_costs(self):
         """
@@ -506,7 +508,7 @@ class Consumers(Agent):
     def update_product_eol(self, product_type):
         """
         The amount of waste generated is taken from "update_product_stock"
-        and attributed to the chosen EoL pathway.
+        and attributed to the chosen EoL pathway
         """
         limited_paths = self.model.all_EoL_pathways.copy()
         if self.model.seeding_recyc["Seeding"] and self.model.clock >= \
@@ -525,12 +527,11 @@ class Consumers(Agent):
                     self.perceived_behavioral_control, self.w_pbc_eol,
                     self.attitude_levels_pathways, self.attitude_level,
                     self.w_a_eol)
+            # HERE: self.number_product_EoL + self.product_storage_to_other
             self.update_eol_volumes(self.EoL_pathway, self.number_product_EoL +
                                     self.product_storage_to_other,
-                                    product_type,
-                                    self.product_storage_to_other)
+                                    product_type, self.product_storage_to_other)
         else:
-            # The product is assumed to be reused only once
             limited_paths["repair"] = False
             limited_paths["sell"] = False
             limited_paths["hoard"] = False
@@ -542,7 +543,8 @@ class Consumers(Agent):
                     self.attitude_levels_pathways, self.attitude_level,
                     self.w_a_eol)
             self.update_eol_volumes(self.used_EoL_pathway,
-                                    self.number_used_product_EoL, product_type,
+                                    self.number_used_product_EoL,
+                                    product_type,
                                     self.product_storage_to_other)
 
     def update_eol_volumes(self, eol_pathway, managed_waste, product_type,
@@ -645,7 +647,7 @@ class Consumers(Agent):
         if self.purchase_choice == "new":
             self.product_years_storage.append(self.EoL_pathway)
         elif self.purchase_choice == "used":
-            self.product_years_storage.append(self.used_EoL_pathway)
+            self.product_years_storage.append("hoard")
         count = 0
         for i in range(len(self.product_years_storage)):
             if self.product_years_storage[i] == "hoard":
@@ -676,6 +678,7 @@ class Consumers(Agent):
                 self.perceived_behavioral_control[1] = -1 * \
                     agent.scd_hand_price * (1 - agent.refurbisher_margin)
                 self.pbc_reuse[1] = agent.scd_hand_price
+        self.pbc_reuse[0] = self.model.fsthand_mkt_pric
         self.perceived_behavioral_control[3] = self.landfill_cost
         self.perceived_behavioral_control[4] = self.hoarding_cost
 
